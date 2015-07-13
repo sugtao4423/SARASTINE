@@ -6,8 +6,9 @@ import java.io.InputStreamReader;
 import java.io.UnsupportedEncodingException;
 import java.net.URL;
 import java.net.URLEncoder;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
-import com.fasterxml.jackson.core.JsonFactory;
 import com.tao.sarastine.CustomListView.OnSoftKeyShownListener;
 
 import android.app.Activity;
@@ -35,6 +36,8 @@ public class Dialogue extends Activity {
 	
 	private SQLiteDatabase db;
 	
+	private Pattern jsonPattern;
+	
 	@Override
 	protected void onCreate(Bundle savedInstanceState){
 		super.onCreate(savedInstanceState);
@@ -51,20 +54,22 @@ public class Dialogue extends Activity {
 		talkText = (EditText)findViewById(R.id.editText1);
 		pref = PreferenceManager.getDefaultSharedPreferences(this);
 		db = new SQLHelper(this).getWritableDatabase();
+		jsonPattern = Pattern.compile(
+				"^\\{\"utt\":(.+),\"mode\":\"(markov|api)\",\"context\":\"(\\w+)\",\"sister\":\"(noah|yua)\",\"user_id\":\"[a-zA-Z0-9]+\"\\}$", Pattern.DOTALL);
 		
 		String who = getIntent().getStringExtra("who");
 		this.who = who;
 		switch (who) {
 		case "noah":
 			noahAdapter = new ListViewAdapter(this, "noah");
-			context = pref.getString("noah_context", "");
+			context = pref.getString("noah_context", null);
 			getActionBar().setTitle("のあちゃん");
 			list.setAdapter(noahAdapter);
 			loadDialogue("noah");
 			break;
 		case "yua":
 			yuaAdapter = new ListViewAdapter(this, "yua");
-			context = pref.getString("yua_context", "");
+			context = pref.getString("yua_context", null);
 			getActionBar().setTitle("ゆあちゃん");
 			list.setAdapter(yuaAdapter);
 			loadDialogue("yua");
@@ -104,16 +109,23 @@ public class Dialogue extends Activity {
 		else
 			yuaAdapter.add(u);
 		db.execSQL("insert into " + who + " values('" + text + "', 'true')");
-		final String call = "http://api.flum.pw/apis/dialogue?api_key=" + getString(R.string.sarastyAPI) +
-				"&sister=" + who + "&user_id=" + pref.getString("user_id", null) +
-				"&mode=markov&utt=" + URLEncoder.encode(text, "utf-8");
+		String call = null;
 		
+		if(context == null){
+			call = "http://api.flum.pw/apis/dialogue?api_key=" + getString(R.string.sarastyAPI) +
+					"&sister=" + who + "&user_id=" + pref.getString("user_id", null) +
+					"&mode=markov&utt=" + URLEncoder.encode(text, "utf-8");
+		}else{
+			call = "http://api.flum.pw/apis/dialogue?api_key=" + getString(R.string.sarastyAPI) +
+					"&context=" + context + "&sister=" + who + "&user_id=" + pref.getString("user_id", null) +
+					"&mode=markov&utt=" + URLEncoder.encode(text, "utf-8");
+		}
 		
-		AsyncTask<Void, Void, String> task = new AsyncTask<Void, Void, String>(){
+		AsyncTask<String, Void, String> task = new AsyncTask<String, Void, String>(){
 			@Override
-			protected String doInBackground(Void... params) {
+			protected String doInBackground(String... params) {
 				try{
-					InputStream in = new URL(call).openStream();
+					InputStream in = new URL(params[0]).openStream();
 					StringBuilder sb = new StringBuilder();
 					try {
 						BufferedReader bf = new BufferedReader(new InputStreamReader(in));
@@ -131,38 +143,33 @@ public class Dialogue extends Activity {
 			@Override
 			protected void onPostExecute(String result){
 				if(result != null){
-					String utt = null;
-					try{
-						com.fasterxml.jackson.core.JsonParser parser = new JsonFactory().createParser(result);
-						for(int i = 0; i < 7; i++){
-							String name = parser.getCurrentName();
-							parser.nextToken();
-				        	if("utt".equals(name)){
-				        		utt = parser.getText();
-				        	}
-				        	else if ("context".equals(name)){
-				        		context = parser.getText();
-				        	}
-				        	parser.nextToken();
+					Matcher m = jsonPattern.matcher(result);
+					if(m.find()){
+						String utt = m.group(1);
+						if(utt.equals("null")){
+							Toast.makeText(Dialogue.this, "null", Toast.LENGTH_SHORT).show();
+						}else{
+							utt = utt.substring(1, utt.length() - 1);
+							context = m.group(3);
+							Utt u = new Utt();
+							u.setSisterUtt(utt);
+							u.setMe(false);
+							if(who.equals("noah"))
+								noahAdapter.add(u);
+							else
+								yuaAdapter.add(u);
+							list.setSelection(list.getBottom());
+							db.execSQL("insert into " + who + " values('" + utt + "', 'false')");
 						}
-					}catch(Exception e){
+					}else{
 						Toast.makeText(Dialogue.this, "エラー", Toast.LENGTH_SHORT).show();
 					}
-					Utt u = new Utt();
-					u.setSisterUtt(utt);
-					u.setMe(false);
-					if(who.equals("noah"))
-						noahAdapter.add(u);
-					else
-						yuaAdapter.add(u);
-					list.setSelection(list.getBottom());
-					db.execSQL("insert into " + who + " values('" + utt + "', 'false')");
 				}else{
 					Toast.makeText(Dialogue.this, "エラー", Toast.LENGTH_SHORT).show();
 				}
 			}
 		};
-		task.execute();
+		task.execute(new String[]{call});
 	}
 	
 	@Override
