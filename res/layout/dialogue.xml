@@ -33,7 +33,9 @@
         android:layout_height="wrap_content"
         android:layout_above="@+id/editText1"
         android:layout_alignParentLeft="true"
-        android:layout_alignParentTop="true" >
+        android:layout_alignParentTop="true"
+        android:listSelector="@android:color/transparent"
+        android:divider="@null" >
     </com.tao.sarastine.CustomListView>>
 
 </RelativeLayout>
