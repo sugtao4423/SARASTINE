@@ -24,14 +24,17 @@ public class ListViewAdapter extends ArrayAdapter<Utt> {
 		boolean me = item.getMe();
 		
 		if(me){
-			convertView = mInflater.inflate(R.layout.dialogue_me, null);
-			TextView utt = (TextView)convertView.findViewById(R.id.dialogueMe);
+			convertView = mInflater.inflate(R.layout.list_item_me, null);
+			TextView utt = (TextView)convertView.findViewById(R.id.me_utt);
+			TextView date = (TextView)convertView.findViewById(R.id.me_date);
 				
-			utt.setText(item.getMeUtt());
+			utt.setText(item.getUtt());
+			date.setText(item.getDate());
 		}else{
-			convertView = mInflater.inflate(R.layout.dialogue_sisters, null);
-			ImageView icon = (ImageView)convertView.findViewById(R.id.sisterIcon);
+			convertView = mInflater.inflate(R.layout.list_item_sister, null);
+			ImageView icon = (ImageView)convertView.findViewById(R.id.sister_icon);
 			TextView utt = (TextView)convertView.findViewById(R.id.sister_utt);
+			TextView date = (TextView)convertView.findViewById(R.id.sister_date);
 			
 			switch(who){
 			case "noah":
@@ -41,7 +44,8 @@ public class ListViewAdapter extends ArrayAdapter<Utt> {
 				icon.setImageResource(R.drawable.yua);
 				break;
 			}
-			utt.setText(item.getSisterUtt());
+			utt.setText(item.getUtt());
+			date.setText(item.getDate());
 		}
 		return convertView;
 	}
