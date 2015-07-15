@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent" >
+
+    <ImageView
+        android:id="@+id/talkUserIcon"
+        android:layout_width="70dp"
+        android:layout_height="70dp"
+        android:layout_alignParentLeft="true"
+        android:layout_alignParentTop="true"
+        android:layout_marginBottom="10dp"
+        android:layout_marginLeft="10dp"
+        android:layout_marginTop="10dp"
+        android:src="@drawable/ic_launcher" />
+
+    <TextView
+        android:id="@+id/talkUserName"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignTop="@+id/talkUserIcon"
+        android:layout_marginLeft="15dp"
+        android:layout_toRightOf="@+id/talkUserIcon"
+        android:text="name"
+        android:textAppearance="?android:attr/textAppearanceLarge" />
+
+    <TextView
+        android:id="@+id/talkUserDate"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignBaseline="@+id/talkUserName"
+        android:layout_alignBottom="@+id/talkUserName"
+        android:layout_alignParentRight="true"
+        android:layout_marginRight="15dp"
+        android:text="date" />
+
+    <TextView
+        android:id="@+id/talkUserContent"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignLeft="@+id/talkUserName"
+        android:layout_below="@+id/talkUserName"
+        android:layout_marginTop="10dp"
+        android:text="text" />
+
+</RelativeLayout>

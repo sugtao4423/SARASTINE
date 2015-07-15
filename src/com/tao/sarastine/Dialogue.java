@@ -56,7 +56,7 @@ public class Dialogue extends Activity {
 		super.onCreate(savedInstanceState);
 		this.getWindow().setSoftInputMode(LayoutParams.SOFT_INPUT_STATE_ALWAYS_VISIBLE);
 		setContentView(R.layout.dialogue);
-		list = (CustomListView)findViewById(R.id.listView1);
+		list = (CustomListView)findViewById(R.id.talkList);
 		listViewListener();
 		
 		talkText = (EditText)findViewById(R.id.editText1);
@@ -80,6 +80,13 @@ public class Dialogue extends Activity {
 			getActionBar().setIcon(R.drawable.yua);
 			list.setAdapter(adapter);
 			loadDialogue("yua");
+			break;
+		case "momoka":
+			adapter = new ListViewAdapter(this, "momoka");
+			getActionBar().setTitle("ももかちゃん");
+			getActionBar().setIcon(R.drawable.momoka);
+			list.setAdapter(adapter);
+			loadDialogue("momoka");
 			break;
 		}
 	}
@@ -128,7 +135,7 @@ public class Dialogue extends Activity {
 		}
 	}
 	
-	public void send(View v) throws UnsupportedEncodingException{
+	public void send(View v){
 		String text = talkText.getText().toString();
 		talkText.setText("");
 		Utt u = new Utt();
@@ -139,16 +146,29 @@ public class Dialogue extends Activity {
 		adapter.add(u);
 		db.execSQL("insert into " + who + " values('" + text + "', 'true', '" + date + "')");
 		list.setSelection(list.getBottom());
+		
+		if(who.equals("noah") || who.equals("yua"))
+			sarastySisters(text);
+		else if(who.equals("momoka"))
+			momoka();
+	}
+	
+	public void sarastySisters(String utt){
 		String call = null;
 		
-		if(context == null){
-			call = "http://api.flum.pw/apis/dialogue?api_key=" + getString(R.string.sarastyAPI) +
-					"&sister=" + who + "&user_id=" + pref.getString("user_id", null) +
-					"&mode=markov&utt=" + URLEncoder.encode(text, "utf-8");
-		}else{
-			call = "http://api.flum.pw/apis/dialogue?api_key=" + getString(R.string.sarastyAPI) +
-					"&context=" + context + "&sister=" + who + "&user_id=" + pref.getString("user_id", null) +
-					"&mode=markov&utt=" + URLEncoder.encode(text, "utf-8");
+		try{
+			if(context == null){
+				call = "http://api.flum.pw/apis/dialogue?api_key=" + getString(R.string.sarastyAPI) +
+						"&sister=" + who + "&user_id=" + pref.getString("user_id", null) +
+						"&mode=markov&utt=" + URLEncoder.encode(utt, "utf-8");
+			}else{
+				call = "http://api.flum.pw/apis/dialogue?api_key=" + getString(R.string.sarastyAPI) +
+						"&context=" + context + "&sister=" + who + "&user_id=" + pref.getString("user_id", null) +
+						"&mode=markov&utt=" + URLEncoder.encode(utt, "utf-8");
+			}
+		}catch(UnsupportedEncodingException e){
+			Toast.makeText(this, "utf-8エンコードエラー", Toast.LENGTH_SHORT).show();
+			return;
 		}
 		
 		AsyncTask<String, Void, String> task = new AsyncTask<String, Void, String>(){
@@ -204,10 +224,51 @@ public class Dialogue extends Activity {
 		task.execute(new String[]{call});
 	}
 	
+	public void momoka(){
+		AsyncTask<Void, Void, String> task = new AsyncTask<Void, Void, String>(){
+			@Override
+			protected String doInBackground(Void... params) {
+				try{
+					InputStream in = new URL(getString(R.string.momokaAddress)).openStream();
+					StringBuilder sb = new StringBuilder();
+					try {
+						BufferedReader bf = new BufferedReader(new InputStreamReader(in));
+						String s;
+						while((s=bf.readLine())!=null)
+							sb.append(s);
+					}finally{
+						in.close();
+					}
+					return sb.toString();
+				}catch(Exception e){
+					return null;
+				}
+			}
+			@Override
+			protected void onPostExecute(String result){
+				if(result != null){
+					Dialogue.this.context = context;
+					Utt u = new Utt();
+					u.setUtt(result);
+					u.setMe(false);
+					String date = new SimpleDateFormat("MM/dd HH:mm:ss", Locale.JAPANESE).format(new Date());
+					u.setDate(date);
+					adapter.add(u);
+					list.setSelection(list.getBottom());
+					db.execSQL("insert into " + who + " values('" + result + "', 'false', '" + date + "')");
+				}else{
+					Toast.makeText(Dialogue.this, "result == null", Toast.LENGTH_SHORT).show();
+				}
+			}
+		};
+		task.execute();
+	}
+	
 	@Override
 	public void onStop(){
 		super.onStop();
-		pref.edit().putString(who + "_context", context).commit();
+		if(who.equals("noah") || who.equals("yua"))
+			pref.edit().putString(who + "_context", context).commit();
 	}
 	
 	@Override
@@ -280,6 +341,9 @@ public class Dialogue extends Activity {
 						break;
 					case "yua":
 						db.execSQL("create table yua(utt text, me text, date text)");
+						break;
+					case "momoka":
+						db.execSQL("create table momoka(utt text, me text, date text)");
 						break;
 					}
 					loadDialogue(who);

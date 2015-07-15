@@ -28,7 +28,7 @@
         android:text="送信" />
     
     <com.tao.sarastine.CustomListView
-        android:id="@+id/listView1"
+        android:id="@+id/talkList"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_above="@+id/editText1"
