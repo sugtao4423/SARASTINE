@@ -14,6 +14,7 @@ public class SQLHelper extends SQLiteOpenHelper {
 	public void onCreate(SQLiteDatabase db) {
 		db.execSQL("create table noah(utt text, me text, date text)");
 		db.execSQL("create table yua(utt text, me text, date text)");
+		db.execSQL("create table momoka(utt text, me text, date text)");
 	}
 
 	@Override

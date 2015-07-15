@@ -10,6 +10,8 @@ import twitter4j.conf.ConfigurationBuilder;
 import android.app.Activity;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.database.Cursor;
+import android.database.sqlite.SQLiteDatabase;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
@@ -17,6 +19,9 @@ import android.preference.PreferenceManager;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.widget.AdapterView;
+import android.widget.AdapterView.OnItemClickListener;
+import android.widget.ListView;
 import android.widget.Toast;
 
 public class MainActivity extends Activity {
@@ -25,11 +30,41 @@ public class MainActivity extends Activity {
 	
 	private Twitter twitter;
 	private RequestToken rt;
+	
+	private ListView userList;
+	private TalkUserListAdapter userListAdapter;
+	private SQLiteDatabase db;
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_main);
+		
+		db = new SQLHelper(this).getReadableDatabase();
+		
+		userList = (ListView)findViewById(R.id.talkUserList);
+		userListAdapter = new TalkUserListAdapter(this);
+		userList.setAdapter(userListAdapter);
+		
+		userList.setOnItemClickListener(new OnItemClickListener() {
+			@Override
+			public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+				User user = (User)parent.getItemAtPosition(position);
+				Intent intent = new Intent(MainActivity.this, Dialogue.class);
+				switch(user.getName()){
+				case "のあちゃん":
+					intent.putExtra("who", "noah");
+					break;
+				case "ゆあちゃん":
+					intent.putExtra("who", "yua");
+					break;
+				case "ももかちゃん":
+					intent.putExtra("who", "momoka");
+					break;
+				}
+				startActivity(intent);
+			}
+		});
 		
 		pref = PreferenceManager.getDefaultSharedPreferences(this);
 		
@@ -38,15 +73,40 @@ public class MainActivity extends Activity {
 		}
 	}
 	
-	public void noah(View v){
-		Intent i = new Intent(this, Dialogue.class);
-		i.putExtra("who", "noah");
-		startActivity(i);
-	}
-	public void yua(View v){
-		Intent i = new Intent(this, Dialogue.class);
-		i.putExtra("who", "yua");
-		startActivity(i);
+	@Override
+	public void onResume(){
+		super.onResume();
+		userListAdapter.clear();
+		Cursor n = db.query("noah", new String[]{"utt", "date"}, null, null, null, null, null);
+		User noah = new User();
+		noah.setIcon(R.drawable.noah);
+		noah.setName("のあちゃん");
+		if(n.moveToLast()){
+			noah.setLastTalk(n.getString(0));
+			noah.setLastDate(n.getString(1));
+		}
+		
+		Cursor y = db.query("yua", new String[]{"utt", "date"}, null, null, null, null, null);
+		User yua = new User();
+		yua.setIcon(R.drawable.yua);
+		yua.setName("ゆあちゃん");
+		if(y.moveToLast()){
+			yua.setLastTalk(y.getString(0));
+			yua.setLastDate(y.getString(1));
+		}
+		
+		Cursor m = db.query("momoka", new String[]{"utt", "date"}, null, null, null, null, null);
+		User momoka = new User();
+		momoka.setIcon(R.drawable.momoka);
+		momoka.setName("ももかちゃん");
+		if(m.moveToLast()){
+			momoka.setLastTalk(m.getString(0));
+			momoka.setLastDate(m.getString(1));
+		}
+		
+		userListAdapter.add(noah);
+		userListAdapter.add(yua);
+		userListAdapter.add(momoka);
 	}
 	
 	public void ninsyo(){

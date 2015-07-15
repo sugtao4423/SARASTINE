@@ -43,6 +43,9 @@ public class ListViewAdapter extends ArrayAdapter<Utt> {
 			case "yua":
 				icon.setImageResource(R.drawable.yua);
 				break;
+			case "momoka":
+				icon.setImageResource(R.drawable.momoka);
+				break;
 			}
 			utt.setText(item.getUtt());
 			date.setText(item.getDate());
