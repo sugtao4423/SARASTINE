@@ -9,8 +9,8 @@ import java.net.URLEncoder;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Locale;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
+import org.json.JSONException;
+import org.json.JSONObject;
 
 import com.tao.sarastine.CustomListView.OnSoftKeyShownListener;
 
@@ -42,8 +42,7 @@ import android.widget.Toast;
 public class Dialogue extends Activity {
 	
 	private CustomListView list;
-	private ListViewAdapter noahAdapter;
-	private ListViewAdapter yuaAdapter;
+	private ListViewAdapter adapter;
 	
 	private SharedPreferences pref;
 	private String who, context;
@@ -51,8 +50,6 @@ public class Dialogue extends Activity {
 	private EditText talkText;
 	
 	private SQLiteDatabase db;
-	
-	private Pattern jsonPattern;
 	
 	@Override
 	protected void onCreate(Bundle savedInstanceState){
@@ -65,26 +62,23 @@ public class Dialogue extends Activity {
 		talkText = (EditText)findViewById(R.id.editText1);
 		pref = PreferenceManager.getDefaultSharedPreferences(this);
 		db = new SQLHelper(this).getWritableDatabase();
-		jsonPattern = Pattern.compile(
-				"^\\{\"utt\":(.+),\"mode\":\"(markov|api)\",\"context\":\"(\\w+)\",\"sister\":\"(noah|yua)\",\"user_id\":\"[a-zA-Z0-9]+\"\\}$", Pattern.DOTALL);
 		
-		String who = getIntent().getStringExtra("who");
-		this.who = who;
+		who = getIntent().getStringExtra("who");
 		context = pref.getString(who + "_context", null);
 		list.setBackgroundColor(pref.getInt(who + "_backgroundColor", Color.parseColor("#cccccc")));
 		switch (who) {
 		case "noah":
-			noahAdapter = new ListViewAdapter(this, "noah");
+			adapter = new ListViewAdapter(this, "noah");
 			getActionBar().setTitle("のあちゃん");
 			getActionBar().setIcon(R.drawable.noah);
-			list.setAdapter(noahAdapter);
+			list.setAdapter(adapter);
 			loadDialogue("noah");
 			break;
 		case "yua":
-			yuaAdapter = new ListViewAdapter(this, "yua");
+			adapter = new ListViewAdapter(this, "yua");
 			getActionBar().setTitle("ゆあちゃん");
 			getActionBar().setIcon(R.drawable.yua);
-			list.setAdapter(yuaAdapter);
+			list.setAdapter(adapter);
 			loadDialogue("yua");
 			break;
 		}
@@ -128,10 +122,7 @@ public class Dialogue extends Activity {
 			u.setUtt(result.getString(0));
 			u.setMe(me);
 			u.setDate(result.getString(2));
-			if(who.equals("noah"))
-				noahAdapter.add(u);
-			else
-				yuaAdapter.add(u);
+			adapter.add(u);
 			
 			mov = result.moveToNext();
 		}
@@ -145,10 +136,7 @@ public class Dialogue extends Activity {
 		u.setMe(true);
 		String date = new SimpleDateFormat("MM/dd HH:mm:ss", Locale.JAPANESE).format(new Date());
 		u.setDate(date);
-		if(who.equals("noah"))
-			noahAdapter.add(u);
-		else
-			yuaAdapter.add(u);
+		adapter.add(u);
 		db.execSQL("insert into " + who + " values('" + text + "', 'true', '" + date + "')");
 		list.setSelection(list.getBottom());
 		String call = null;
@@ -185,31 +173,31 @@ public class Dialogue extends Activity {
 			@Override
 			protected void onPostExecute(String result){
 				if(result != null){
-					Matcher m = jsonPattern.matcher(result);
-					if(m.find()){
-						String utt = m.group(1);
-						if(utt.equals("null")){
-							Toast.makeText(Dialogue.this, "null", Toast.LENGTH_SHORT).show();
-						}else{
-							utt = utt.substring(1, utt.length() - 1);
-							context = m.group(3);
-							Utt u = new Utt();
-							u.setUtt(utt);
-							u.setMe(false);
-							String date = new SimpleDateFormat("MM/dd HH:mm:ss", Locale.JAPANESE).format(new Date());
-							u.setDate(date);
-							if(who.equals("noah"))
-								noahAdapter.add(u);
-							else
-								yuaAdapter.add(u);
-							list.setSelection(list.getBottom());
-							db.execSQL("insert into " + who + " values('" + utt + "', 'false', '" + date + "')");
-						}
+					JSONObject jsonObj;
+					String utt = null, context = null;
+					try {
+						jsonObj = new JSONObject(result);
+						utt = jsonObj.getString("utt");
+						context = jsonObj.getString("context");
+					}catch(JSONException e){
+						Toast.makeText(Dialogue.this, "JsonParseError", Toast.LENGTH_SHORT).show();
+						return;
+					}
+					if(utt.equals("null")){
+						Toast.makeText(Dialogue.this, "null", Toast.LENGTH_SHORT).show();
 					}else{
-						Toast.makeText(Dialogue.this, "エラー", Toast.LENGTH_SHORT).show();
+						Dialogue.this.context = context;
+						Utt u = new Utt();
+						u.setUtt(utt);
+						u.setMe(false);
+						String date = new SimpleDateFormat("MM/dd HH:mm:ss", Locale.JAPANESE).format(new Date());
+						u.setDate(date);
+						adapter.add(u);
+						list.setSelection(list.getBottom());
+						db.execSQL("insert into " + who + " values('" + utt + "', 'false', '" + date + "')");
 					}
 				}else{
-					Toast.makeText(Dialogue.this, "エラー", Toast.LENGTH_SHORT).show();
+					Toast.makeText(Dialogue.this, "result == null", Toast.LENGTH_SHORT).show();
 				}
 			}
 		};
@@ -285,13 +273,12 @@ public class Dialogue extends Activity {
 				public void onClick(DialogInterface dialog, int which) {
 					db.execSQL("drop table " + who);
 					pref.edit().putString(who + "_context", null).commit();
+					adapter.clear();
 					switch(who){
 					case "noah":
-						noahAdapter.clear();
 						db.execSQL("create table noah(utt text, me text, date text)");
 						break;
 					case "yua":
-						yuaAdapter.clear();
 						db.execSQL("create table yua(utt text, me text, date text)");
 						break;
 					}
