@@ -9,6 +9,7 @@ import java.net.URLEncoder;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Locale;
+
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -17,6 +18,7 @@ import com.tao.sarastine.CustomListView.OnSoftKeyShownListener;
 import dronjo.products.dronjonail.ColorPickerDialog;
 import dronjo.products.dronjonail.ColorPickerDialog.OnColorChangedListener;
 import android.R.color;
+import android.R.string;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.ClipData;
@@ -155,19 +157,25 @@ public class Dialogue extends Activity {
 	
 	public void sarastySisters(String utt){
 		String call = null;
-		
+		String sister = null;
+		if(who.equals("noah")){
+			sister = "sarasty_noah";
+		}else if (who.equals("yua")) {
+			sister = "sarasty_yua";
+		}
 		try{
 			if(context == null){
 				call = "http://api.flum.pw/apis/dialogue?api_key=" + getString(R.string.sarastyAPI) +
-						"&sister=" + who + "&user_id=" + pref.getString("user_id", null) +
+						"&sister=" + sister + "&user_id=" + pref.getString("user_id", null) +
 						"&mode=markov&utt=" + URLEncoder.encode(utt, "utf-8");
 			}else{
 				call = "http://api.flum.pw/apis/dialogue?api_key=" + getString(R.string.sarastyAPI) +
-						"&context=" + context + "&sister=" + who + "&user_id=" + pref.getString("user_id", null) +
+						"&context=" + context + "&sister=" + sister + "&user_id=" + pref.getString("user_id", null) +
 						"&mode=markov&utt=" + URLEncoder.encode(utt, "utf-8");
 			}
+			Toast.makeText(this, call, Toast.LENGTH_SHORT).show();
 		}catch(UnsupportedEncodingException e){
-			Toast.makeText(this, "utf-8エンコードエラー", Toast.LENGTH_SHORT).show();
+			Toast.makeText(this, "utf-8エンコードエラー", Toast.LENGTH_LONG).show();
 			return;
 		}
 		
@@ -194,27 +202,36 @@ public class Dialogue extends Activity {
 			protected void onPostExecute(String result){
 				if(result != null){
 					JSONObject jsonObj;
-					String utt = null, context = null;
+					String utt = null, context = null, smile = null;
 					try {
 						jsonObj = new JSONObject(result);
 						utt = jsonObj.getString("utt");
+						smile = jsonObj.getString("smile");
 						context = jsonObj.getString("context");
 					}catch(JSONException e){
 						Toast.makeText(Dialogue.this, "JsonParseError", Toast.LENGTH_SHORT).show();
 						return;
 					}
 					if(utt.equals("null")){
-						Toast.makeText(Dialogue.this, "null", Toast.LENGTH_SHORT).show();
-					}else{
 						Dialogue.this.context = context;
 						Utt u = new Utt();
-						u.setUtt(utt);
+						u.setUtt(smile);
 						u.setMe(false);
 						String date = new SimpleDateFormat("MM/dd HH:mm:ss", Locale.JAPANESE).format(new Date());
 						u.setDate(date);
 						adapter.add(u);
 						list.setSelection(list.getBottom());
-						db.execSQL("insert into " + who + " values('" + utt + "', 'false', '" + date + "')");
+						db.execSQL("insert into " + who + " values('" + smile + "', 'false', '" + date + "')");
+					}else{
+						Dialogue.this.context = context;
+						Utt u = new Utt();
+						u.setUtt(smile + " " + utt);
+						u.setMe(false);
+						String date = new SimpleDateFormat("MM/dd HH:mm:ss", Locale.JAPANESE).format(new Date());
+						u.setDate(date);
+						adapter.add(u);
+						list.setSelection(list.getBottom());
+						db.execSQL("insert into " + who + " values('" + smile + " " + utt + "', 'false', '" + date + "')");
 					}
 				}else{
 					Toast.makeText(Dialogue.this, "result == null", Toast.LENGTH_SHORT).show();
