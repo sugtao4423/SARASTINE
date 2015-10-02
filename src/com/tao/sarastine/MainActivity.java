@@ -7,7 +7,9 @@ import twitter4j.auth.AccessToken;
 import twitter4j.auth.RequestToken;
 import twitter4j.conf.Configuration;
 import twitter4j.conf.ConfigurationBuilder;
+
 import android.app.Activity;
+import android.app.ProgressDialog;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.database.Cursor;
@@ -16,8 +18,6 @@ import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
-import android.view.Menu;
-import android.view.MenuItem;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.AdapterView.OnItemClickListener;
@@ -112,6 +112,18 @@ public class MainActivity extends Activity{
 		twitter = new TwitterFactory(conf).getInstance();
 
 		AsyncTask<Void, Void, RequestToken> task = new AsyncTask<Void, Void, RequestToken>(){
+			private ProgressDialog progDailog;
+
+			@Override
+			protected void onPreExecute(){
+				progDailog = new ProgressDialog(MainActivity.this);
+				progDailog.setMessage("Loading...");
+				progDailog.setIndeterminate(false);
+				progDailog.setProgressStyle(ProgressDialog.STYLE_SPINNER);
+				progDailog.setCancelable(true);
+				progDailog.show();
+			}
+
 			@Override
 			protected RequestToken doInBackground(Void... params){
 				try{
@@ -124,6 +136,7 @@ public class MainActivity extends Activity{
 
 			@Override
 			protected void onPostExecute(RequestToken result){
+				progDailog.dismiss();
 				if(result != null)
 					startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(rt.getAuthenticationURL())));
 				else
@@ -143,6 +156,18 @@ public class MainActivity extends Activity{
 		final String verifier = intent.getData().getQueryParameter("oauth_verifier");
 
 		AsyncTask<Void, Void, AccessToken> task = new AsyncTask<Void, Void, AccessToken>(){
+			private ProgressDialog progDailog;
+
+			@Override
+			protected void onPreExecute(){
+				progDailog = new ProgressDialog(MainActivity.this);
+				progDailog.setMessage("Loading...");
+				progDailog.setIndeterminate(false);
+				progDailog.setProgressStyle(ProgressDialog.STYLE_SPINNER);
+				progDailog.setCancelable(true);
+				progDailog.show();
+			}
+
 			@Override
 			protected AccessToken doInBackground(Void... params){
 				try{
@@ -154,6 +179,7 @@ public class MainActivity extends Activity{
 
 			@Override
 			protected void onPostExecute(AccessToken result){
+				progDailog.dismiss();
 				if(result != null) {
 					pref.edit().putString("user_id", result.getScreenName()).commit();
 					Toast.makeText(MainActivity.this, "認証しました", Toast.LENGTH_SHORT).show();
@@ -162,15 +188,5 @@ public class MainActivity extends Activity{
 			}
 		};
 		task.execute();
-	}
-
-	@Override
-	public boolean onCreateOptionsMenu(Menu menu){
-		return true;
-	}
-
-	@Override
-	public boolean onOptionsItemSelected(MenuItem item){
-		return super.onOptionsItemSelected(item);
 	}
 }
