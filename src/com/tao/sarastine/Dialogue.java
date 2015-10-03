@@ -198,17 +198,22 @@ public class Dialogue extends Activity{
 						Toast.makeText(Dialogue.this, "JsonParseError", Toast.LENGTH_SHORT).show();
 						return;
 					}
-					if(utt.equals("null")) {
+					if(utt.equals("null") && smile.equals("null")){
 						Toast.makeText(Dialogue.this, "null", Toast.LENGTH_SHORT).show();
-					}else{
-						Dialogue.this.context = context;
-						String date = new SimpleDateFormat("MM/dd HH:mm:ss", Locale.JAPANESE).format(new Date());
-						utt = smile + utt;
-						Utt u = new Utt(utt, false, date);
-						adapter.add(u);
-						list.setSelection(list.getBottom());
-						db.execSQL("insert into " + who + " values('" + utt + "', 'false', '" + date + "')");
+						if(!context.equals("null"))
+							Dialogue.this.context = context;
+						return;
 					}
+					if(utt.equals("null"))
+						utt = smile;
+					else
+						utt = smile + utt;
+					Dialogue.this.context = context;
+					String date = new SimpleDateFormat("MM/dd HH:mm:ss", Locale.JAPANESE).format(new Date());
+					Utt u = new Utt(utt, false, date);
+					adapter.add(u);
+					list.setSelection(list.getBottom());
+					db.execSQL("insert into " + who + " values('" + utt + "', 'false', '" + date + "')");
 				}else{
 					Toast.makeText(Dialogue.this, "result == null", Toast.LENGTH_SHORT).show();
 				}
