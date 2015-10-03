@@ -26,7 +26,7 @@
         android:layout_alignTop="@+id/editText1"
         android:onClick="send"
         android:text="送信" />
-    
+
     <com.tao.sarastine.CustomListView
         android:id="@+id/talkList"
         android:layout_width="match_parent"
@@ -34,8 +34,9 @@
         android:layout_above="@+id/editText1"
         android:layout_alignParentLeft="true"
         android:layout_alignParentTop="true"
-        android:listSelector="@android:color/transparent"
-        android:divider="@null" >
-    </com.tao.sarastine.CustomListView>>
+        android:divider="@null"
+        android:listSelector="@android:color/transparent" >
+    </com.tao.sarastine.CustomListView>
+>
 
 </RelativeLayout>
