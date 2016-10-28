@@ -112,16 +112,16 @@ public class MainActivity extends Activity{
 		twitter = new TwitterFactory(conf).getInstance();
 
 		AsyncTask<Void, Void, RequestToken> task = new AsyncTask<Void, Void, RequestToken>(){
-			private ProgressDialog progDailog;
+			private ProgressDialog progDialog;
 
 			@Override
 			protected void onPreExecute(){
-				progDailog = new ProgressDialog(MainActivity.this);
-				progDailog.setMessage("Loading...");
-				progDailog.setIndeterminate(false);
-				progDailog.setProgressStyle(ProgressDialog.STYLE_SPINNER);
-				progDailog.setCancelable(true);
-				progDailog.show();
+				progDialog = new ProgressDialog(MainActivity.this);
+				progDialog.setMessage("Loading...");
+				progDialog.setIndeterminate(false);
+				progDialog.setProgressStyle(ProgressDialog.STYLE_SPINNER);
+				progDialog.setCancelable(true);
+				progDialog.show();
 			}
 
 			@Override
@@ -136,7 +136,7 @@ public class MainActivity extends Activity{
 
 			@Override
 			protected void onPostExecute(RequestToken result){
-				progDailog.dismiss();
+				progDialog.dismiss();
 				if(result != null)
 					startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(rt.getAuthenticationURL())));
 				else
@@ -156,16 +156,16 @@ public class MainActivity extends Activity{
 		final String verifier = intent.getData().getQueryParameter("oauth_verifier");
 
 		AsyncTask<Void, Void, AccessToken> task = new AsyncTask<Void, Void, AccessToken>(){
-			private ProgressDialog progDailog;
+			private ProgressDialog progDialog;
 
 			@Override
 			protected void onPreExecute(){
-				progDailog = new ProgressDialog(MainActivity.this);
-				progDailog.setMessage("Loading...");
-				progDailog.setIndeterminate(false);
-				progDailog.setProgressStyle(ProgressDialog.STYLE_SPINNER);
-				progDailog.setCancelable(true);
-				progDailog.show();
+				progDialog = new ProgressDialog(MainActivity.this);
+				progDialog.setMessage("Loading...");
+				progDialog.setIndeterminate(false);
+				progDialog.setProgressStyle(ProgressDialog.STYLE_SPINNER);
+				progDialog.setCancelable(true);
+				progDialog.show();
 			}
 
 			@Override
@@ -179,7 +179,7 @@ public class MainActivity extends Activity{
 
 			@Override
 			protected void onPostExecute(AccessToken result){
-				progDailog.dismiss();
+				progDialog.dismiss();
 				if(result != null) {
 					pref.edit().putString("user_id", result.getScreenName()).commit();
 					Toast.makeText(MainActivity.this, "認証しました", Toast.LENGTH_SHORT).show();
